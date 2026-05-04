@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>热点关注 – AI 雷达</title>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --surface: #141a26;
+    --border: #1e2a3a;
+    --text: #e2e8f0;
+    --text-muted: #8899aa;
+    --accent: #7c3aed;
+    --accent-glow: rgba(124, 58, 237, 0.25);
+    --bilibili: #fb7299;
+    --weibo: #ff8200;
+    --douyin: #ff0050;
+    --ai-badge: #7c3aed;
+    --ai-badge-bg: rgba(124, 58, 237, 0.15);
+    --rank-1: #f59e0b;
+    --rank-2: #94a3b8;
+    --rank-3: #d97706;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .app { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .logo {
+    font-size: 24px; font-weight: 700;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer;
+    font-size: 13px; transition: all .2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); }
+  .refresh-btn:active { transform: scale(0.96); }
+  .countdown { font-size: 12px; color: var(--text-muted); min-width: 60px; text-align: right; }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .toggle-label {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 14px; user-select: none;
+  }
+  .toggle-track {
+    width: 44px; height: 24px; border-radius: 12px;
+    background: var(--border); position: relative; transition: background .25s;
+  }
+  .toggle-track.on { background: var(--accent); }
+  .toggle-thumb {
+    width: 20px; height: 20px; border-radius: 50%; background: white;
+    position: absolute; top: 2px; left: 2px; transition: transform .25s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .toggle-thumb.on { transform: translateX(20px); }
+  .ai-chip {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    background: var(--ai-badge-bg); color: var(--ai-badge);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--surface); border-radius: 12px; padding: 4px;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 12px; border-radius: 10px;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s;
+    color: var(--text-muted); white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent); color: white; }
+
+  /* Summary bar */
+  .summary {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 16px; font-size: 13px; color: var(--text-muted);
+  }
+  .summary strong { color: var(--accent); }
+
+  /* Hot list */
+  .hot-list { display: flex; flex-direction: column; gap: 6px; }
+  .hot-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    transition: border-color .2s; cursor: pointer; text-decoration: none;
+    color: var(--text);
+  }
+  .hot-item:hover { border-color: var(--accent); }
+  .hot-item.ai-highlight { border-color: rgba(124, 58, 237, 0.4); background: rgba(124, 58, 237, 0.04); }
+  .rank {
+    font-size: 16px; font-weight: 700; min-width: 32px; text-align: center;
+    color: var(--text-muted);
+  }
+  .rank.top1 { color: var(--rank-1); }
+  .rank.top2 { color: var(--rank-2); }
+  .rank.top3 { color: var(--rank-3); }
+  .item-body { flex: 1; min-width: 0; }
+  .item-title {
+    font-size: 14px; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .item-meta {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px;
+  }
+  .item-hot { font-size: 12px; color: var(--text-muted); }
+  .platform-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+  }
+  .platform-badge.b { background: rgba(251, 114, 153, 0.15); color: var(--bilibili); }
+  .platform-badge.w { background: rgba(255, 130, 0, 0.15); color: var(--weibo); }
+  .platform-badge.d { background: rgba(255, 0, 80, 0.15); color: var(--douyin); }
+  .ai-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+    background: var(--ai-badge-bg); color: var(--ai-badge);
+  }
+
+  /* Loading / Empty */
+  .state-msg {
+    text-align: center; padding: 60px 20px; color: var(--text-muted);
+    font-size: 15px;
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-msg {
+    padding: 12px 16px; border-radius: 10px; background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;
+    font-size: 13px; margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .app { padding: 16px 12px 40px; }
+    .logo { font-size: 20px; }
+    .tab { font-size: 12px; padding: 8px; }
+    .hot-item { padding: 10px 12px; gap: 8px; }
+    .item-title { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">AI 雷达 · 热点关注</div>
+    <div class="header-right">
+      <span class="countdown" id="countdown">--:--</span>
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+        <span id="refreshIcon">&#x21bb;</span> 刷新
+      </button>
+    </div>
+  </div>
+
+  <div class="toggle-row">
+    <label class="toggle-label" id="aiToggle">
+      <div class="toggle-track" id="toggleTrack"><div class="toggle-thumb" id="toggleThumb"></div></div>
+      <span>只看 AI</span>
+      <span class="ai-chip" id="aiCount">0</span>
+    </label>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-platform="all">全部</div>
+    <div class="tab" data-platform="bilibili">B站热榜</div>
+    <div class="tab" data-platform="weibo">微博热搜</div>
+    <div class="tab" data-platform="douyin">抖音趋势</div>
+  </div>
+
+  <div class="summary" id="summary" style="display:none">
+    更新于 <span id="updateTime">--</span> &middot;
+    共 <strong id="totalCount">0</strong> 条 &middot;
+    AI 相关 <strong id="aiTotalCount">0</strong> 条
+  </div>
+
+  <div id="errorBox"></div>
+  <div id="content"><div class="state-msg"><div class="spinner"></div>加载中...</div></div>
+</div>
+
+<script>
+// State
+let currentPlatform = 'all';
+let aiOnly = false;
+let data = null;
+let countdownSeconds = 300; // 5 min
+let countdownInterval = null;
+
+const PLATFORM_LABELS = { bilibili: 'B站', weibo: '微博', douyin: '抖音' };
+const PLATFORM_CLASS = { bilibili: 'b', weibo: 'w', douyin: 'd' };
+
+function startCountdown() {
+  countdownSeconds = 300;
+  updateCountdownDisplay();
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    countdownSeconds--;
+    updateCountdownDisplay();
+    if (countdownSeconds <= 0) {
+      fetchData(false);
+    }
+  }, 1000);
+}
+
+function updateCountdownDisplay() {
+  const m = Math.floor(countdownSeconds / 60);
+  const s = countdownSeconds % 60;
+  document.getElementById('countdown').textContent =
+    String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+async function fetchData(isManual) {
+  if (isManual) {
+    try {
+      document.getElementById('refreshIcon').textContent = '⏳';
+      await fetch('/api/refresh');
+    } catch(e) {}
+    document.getElementById('refreshIcon').textContent = '↻';
+  }
+  try {
+    const resp = await fetch('/api/hot?ai_only=false');
+    if (!resp.ok) throw new Error(resp.statusText);
+    data = await resp.json();
+    document.getElementById('errorBox').innerHTML = '';
+    render();
+    startCountdown();
+  } catch(e) {
+    document.getElementById('errorBox').innerHTML =
+      '<div class="error-msg">获取数据失败: ' + e.message + ' — 请确认网络连接</div>';
+    countdownSeconds = 30;
+    updateCountdownDisplay();
+  }
+}
+
+function manualRefresh() { fetchData(true); }
+
+function render() {
+  if (!data) return;
+
+  document.getElementById('summary').style.display = 'flex';
+  document.getElementById('updateTime').textContent =
+    new Date(data.updated_at).toLocaleTimeString('zh-CN');
+  document.getElementById('totalCount').textContent = data.total_count;
+  document.getElementById('aiTotalCount').textContent = data.ai_count;
+  document.getElementById('aiCount').textContent = aiOnly
+    ? data.all.filter(it => it.is_ai).length
+    : data.ai_count;
+
+  let items;
+  if (currentPlatform === 'all') {
+    items = data.all;
+  } else {
+    items = data.platforms[currentPlatform] || [];
+  }
+  if (aiOnly) {
+    items = items.filter(it => it.is_ai);
+  }
+
+  const container = document.getElementById('content');
+  if (items.length === 0) {
+    container.innerHTML = '<div class="state-msg">暂无匹配的热点</div>';
+    return;
+  }
+
+  container.innerHTML = '<div class="hot-list">' +
+    items.map((item, idx) => {
+      const displayRank = idx + 1;
+      const rankClass = displayRank <= 3 ? ' top' + displayRank : '';
+      const aiCls = item.is_ai ? ' ai-highlight' : '';
+      const platform = item.platform;
+      const badge = PLATFORM_LABELS[platform] || platform;
+      const badgeCls = PLATFORM_CLASS[platform] || '';
+      const href = item.url ? ' href="' + escapeHtml(item.url) + '" target="_blank"' : '';
+      const tag = href ? 'a' : 'div';
+
+      return '<' + tag + ' class="hot-item' + aiCls + '"' + href + '>' +
+        '<span class="rank' + rankClass + '">' + displayRank + '</span>' +
+        '<span class="item-body">' +
+          '<div class="item-title">' + escapeHtml(item.title) + '</div>' +
+          '<span class="item-meta">' +
+            (item.hot_value
+              ? '<span class="item-hot">🔥 ' + escapeHtml(String(item.hot_value)) + '</span>'
+              : '') +
+            '<span class="platform-badge ' + badgeCls + '">' + badge + '</span>' +
+            (item.is_ai ? '<span class="ai-badge">AI</span>' : '') +
+          '</span>' +
+        '</span>' +
+      '</' + tag + '>';
+    }).join('') +
+    '</div>';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Tabs
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentPlatform = tab.dataset.platform;
+  render();
+});
+
+// AI toggle
+document.getElementById('aiToggle').addEventListener('click', () => {
+  aiOnly = !aiOnly;
+  document.getElementById('toggleTrack').classList.toggle('on', aiOnly);
+  document.getElementById('toggleThumb').classList.toggle('on', aiOnly);
+  render();
+});
+
+// Init
+fetchData(false);
+</script>
+</body>
+</html>
