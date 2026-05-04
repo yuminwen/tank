@@ -55,6 +55,10 @@ def parse_items(raw_data, platform, max_items=30):
             continue
         hot = item.get("hot", item.get("hot_value", item.get("heat_score", "")))
         url = item.get("url", item.get("mobileUrl", item.get("link", "")))
+        extra = item.get("extra") if isinstance(item.get("extra"), dict) else None
+        owner = ""
+        if extra and isinstance(extra.get("owner"), dict):
+            owner = extra["owner"].get("name", "")
         items.append({
             "rank": len(items) + 1,
             "title": title,
@@ -62,6 +66,7 @@ def parse_items(raw_data, platform, max_items=30):
             "platform": platform,
             "is_ai": is_ai_related(title),
             "url": url,
+            "owner": owner,
         })
     return items
 
