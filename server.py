@@ -150,6 +150,6 @@ def index():
 
 
 if __name__ == "__main__":
-    PORT = 8765
+    PORT = int(__import__("os").environ.get("PORT", "8765"))
     print(f"Tank - 热点关注面板 starting on http://localhost:{PORT}")
     app.run(host="0.0.0.0", port=PORT, debug=True)
